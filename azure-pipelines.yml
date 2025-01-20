@@ -45,7 +45,7 @@ stages:
           provider: 'azurerm'
           command: 'init'
           workingDirectory: '$(System.ArtifactsDirectory)/drop'
-          backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+          backendServiceArm: '<subscription_name>(2derea3b5-782f-410e-ba8d-195a84883c50)'
           backendAzureRmResourceGroupName: 'Dev'
           backendAzureRmStorageAccountName: 'devstorageaccount'
           backendAzureRmContainerName: 'terraform-state'
@@ -53,7 +53,7 @@ stages:
       - task: TerraformTaskV4@4
         inputs:
           provider: 'azurerm'
-          backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+          backendServiceArm: '<subscription_name>(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
           backendAzureRmResourceGroupName: 'Dev'
           backendAzureRmStorageAccountName: 'devstorageaccount'
           backendAzureRmContainerName: 'terraform-state'
@@ -61,7 +61,7 @@ stages:
           command: 'plan'
           workingDirectory: '$(System.ArtifactsDirectory)/drop'
           commandOptions: '-var-file=staging.tfvars -var "administrator_login=$(administrator_login)" -var "administrator_password=$(administrator_password)"'
-          environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+          environmentServiceNameAzureRM: '<subscription_name>(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
 
   - stage: Deploy
     jobs:
@@ -79,7 +79,7 @@ stages:
                   inputs:
                     provider: 'azurerm'
                     command: 'init'
-                    backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+                    backendServiceArm: '<subscription_name>(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
                     backendAzureRmResourceGroupName: 'Dev'
                     backendAzureRmStorageAccountName: 'devstorageaccount'
                     backendAzureRmContainerName: 'terraform-state'
@@ -88,11 +88,11 @@ stages:
                   inputs:
                     provider: 'azurerm'
                     command: 'plan'
-                    environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+                    environmentServiceNameAzureRM: '<subscription_name>(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
             deploy: 
               steps:
                 - task: TerraformTaskV4@4
                   inputs:
                     provider: 'azurerm'
                     command: 'apply'
-                    environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+                    environmentServiceNameAzureRM: '<subscription_name>(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
