@@ -1,0 +1,98 @@
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: 
+    jobs:
+      - job: Build
+        displayName: Building Artifact
+        steps:
+        - task: CopyFiles@2
+          inputs:
+            SourceFolder: '$(System.DefaultWorkingDirectory)/Terraform'
+            Contents: '**'
+            TargetFolder: '$(build.artifactstagingdirectory)/Terraform'
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+        - script: |
+            echo "Listing contents of Artifact Staging Directory:"
+            ls -la $(Build.ArtifactStagingDirectory)
+          displayName: 'List Artifact Staging Directory Contents'
+  - stage: 
+    jobs:
+    - job: Plan
+      displayName: Plan
+      steps:
+      - task: DownloadBuildArtifacts@1
+        inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: 'drop'
+          downloadPath: '$(System.ArtifactsDirectory)'
+      - task: TerraformInstaller@1
+        inputs:
+          terraformVersion: 'latest'
+      - task: TerraformTaskV4@4
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.ArtifactsDirectory)/drop'
+          backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+          backendAzureRmResourceGroupName: 'Dev'
+          backendAzureRmStorageAccountName: 'devstorageaccount'
+          backendAzureRmContainerName: 'terraform-state'
+          backendAzureRmKey: 'staging/terraform-staging.tfstate'
+      - task: TerraformTaskV4@4
+        inputs:
+          provider: 'azurerm'
+          backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+          backendAzureRmResourceGroupName: 'Dev'
+          backendAzureRmStorageAccountName: 'devstorageaccount'
+          backendAzureRmContainerName: 'terraform-state'
+          backendAzureRmKey: 'staging/terraform-staging.tfstate'
+          command: 'plan'
+          workingDirectory: '$(System.ArtifactsDirectory)/drop'
+          commandOptions: '-var-file=staging.tfvars -var "administrator_login=$(administrator_login)" -var "administrator_password=$(administrator_password)"'
+          environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+
+  - stage: Deploy
+    jobs:
+      - deployment: Deploy
+        displayName: Deploy
+        environment: prod-environment
+        strategy:
+          runOnce:
+            preDeploy:
+              steps:
+                - task: TerraformInstaller@1
+                  inputs:
+                    terraformVersion: 'latest'
+                - task: TerraformTaskV4@4
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    backendServiceArm: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+                    backendAzureRmResourceGroupName: 'Dev'
+                    backendAzureRmStorageAccountName: 'devstorageaccount'
+                    backendAzureRmContainerName: 'terraform-state'
+                    backendAzureRmKey: 'production/terraform-production.tfstate'
+                - task: TerraformTaskV4@4
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'plan'
+                    environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
+            deploy: 
+              steps:
+                - task: TerraformTaskV4@4
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'apply'
+                    environmentServiceNameAzureRM: 'Subscription for Empower(2d0ea3b5-782f-410e-ba8d-195a84883c50)'
